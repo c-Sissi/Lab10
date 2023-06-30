@@ -5,9 +5,15 @@
 package it.polito.tdp.rivers;
 
 import java.net.URL;
+import java.util.HashSet;
 import java.util.ResourceBundle;
+import java.util.Set;
 
+import it.polito.tdp.rivers.model.Measurments;
 import it.polito.tdp.rivers.model.Model;
+import it.polito.tdp.rivers.model.River;
+import it.polito.tdp.rivers.model.SimulationResult;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -25,7 +31,7 @@ public class FXMLController {
     private URL location;
 
     @FXML // fx:id="boxRiver"
-    private ComboBox<?> boxRiver; // Value injected by FXMLLoader
+    private ComboBox<String> boxRiver; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtStartDate"
     private TextField txtStartDate; // Value injected by FXMLLoader
@@ -48,6 +54,62 @@ public class FXMLController {
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
 
+    public void setModel(Model model) {
+    	this.model = model;
+    	this.boxRiver.getItems().addAll(this.model.getAllRivers()) ;
+    	
+    }
+    
+    @FXML
+    void doSimulation(ActionEvent event) {
+    	
+    	txtResult.clear();
+    	River river = null;
+    	String riverName = boxRiver.getValue();
+    	if (riverName == null) {
+    		txtResult.appendText("Seleziona un fiume!");
+    		return ;
+    	}
+ 
+    	for(River r: this.model.mappaFiumi()) {
+    		if(r.getName().equals(riverName)) {
+    			river = r;
+    			return;
+    		}
+    		try {
+    			double k = Double.parseDouble(txtK.getText());
+    				SimulationResult sr = model.simulate(river, k);
+    				txtResult.setText("Numero di giorni \"critici\": "
+    						+ sr.getNumGiorni() + "\n");
+    				txtResult.appendText("Occupazione media del bacino: " + sr.getAvgC() + "\n");
+    				txtResult.appendText("SIMULAZIONE TERMINATA!\n");
+    			} 
+    		catch (NumberFormatException nfe) {
+    			txtResult.setText("Devi inserire un valore numerico per il fattore k");
+    		}
+        	
+        	
+    	}
+    	
+	}
+    	
+
+    @FXML
+    void doCompleteData(ActionEvent event) {
+		String rivName = this.boxRiver.getValue();
+		if(rivName != null) {
+	    	for(River r: this.model.mappaFiumi()) {
+	    		if(r.getName().equals(rivName)) {
+	    			Measurments m = this.model.getAllMeasurments(r).get(r.getId());
+	    			txtStartDate.setText(m.getFist()+"");
+	    			txtEndDate.setText(m.getLast()+"");
+	    			txtNumMeasurements.setText(m.getNumMisure()+"");
+	    			txtFMed.setText(m.getAvgMisure()+"");
+	    			return;
+	    		}
+	    	}
+		}
+    }
     @FXML // This method is called by the FXMLLoader when initialization is complete
     void initialize() {
         assert boxRiver != null : "fx:id=\"boxRiver\" was not injected: check your FXML file 'Scene.fxml'.";
@@ -60,7 +122,5 @@ public class FXMLController {
         assert txtResult != null : "fx:id=\"txtResult\" was not injected: check your FXML file 'Scene.fxml'.";
     }
     
-    public void setModel(Model model) {
-    	this.model = model;
-    }
+  
 }
